@@ -368,11 +368,20 @@ func (enc *Encoder) eStruct(key Key, rv reflect.Value) {
 				continue
 			}
 
-			enc.encode(key.add(keyName), sf)
+			enc.encodeWithComments(key.add(keyName), sf, opts.comment)
+
 		}
 	}
 	writeFields(fieldsDirect)
 	writeFields(fieldsSub)
+}
+
+func (enc *Encoder) encodeWithComments(key Key, rv reflect.Value, comment string) {
+	enc.encode(key, rv)
+	if len(comment) > 0 {
+		enc.wf(" # %s", comment)
+	}
+	enc.newline()
 }
 
 // tomlTypeName returns the TOML type name of the Go value's type. It is
@@ -462,6 +471,7 @@ type tagOptions struct {
 	name      string
 	omitempty bool
 	omitzero  bool
+	comment   string
 }
 
 func getOptions(tag reflect.StructTag) tagOptions {
@@ -480,6 +490,7 @@ func getOptions(tag reflect.StructTag) tagOptions {
 			opts.omitzero = true
 		}
 	}
+	opts.comment = tag.Get("#")
 	return opts
 }
 
@@ -518,7 +529,7 @@ func (enc *Encoder) keyEqElement(key Key, val reflect.Value) {
 	panicIfInvalidKey(key)
 	enc.wf("%s%s = ", enc.indentStr(key), key.maybeQuoted(len(key)-1))
 	enc.eElement(val)
-	enc.newline()
+	//enc.newline()
 }
 
 func (enc *Encoder) wf(format string, v ...interface{}) {
